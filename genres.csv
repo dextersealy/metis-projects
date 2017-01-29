@@ -1,0 +1,61 @@
+Action,action_adventure
+Action / Adventure,action_adventure
+Action / Crime,action_adventure
+Action Comedy,action_adventure
+Action Drama,action_adventure
+Action Fantasy,action_adventure
+Action Horror,action_adventure
+Action Thriller,action_adventure
+Adventure,action_adventure
+Adventure Comedy,action_adventure
+Animation,animation
+Comedy,comedy
+Comedy / Drama,comedy
+Comedy Thriller,comedy
+Concert,other
+Crime,drama
+Crime Comedy,comedy
+Crime Drama,drama
+Crime Thriller,drama
+Documentary,documentary
+Drama,drama
+Drama / Thriller,drama
+Family,other
+Family Adventure,action_adventure
+Family Comedy,comedy
+Fantasy,scifi_fantasy
+Fantasy Comedy,scifi_fantasy
+Fantasy Drama,scifi_fantasy
+Foreign,other
+Foreign / Action,other
+Foreign / Horror,other
+Historical Drama,drama
+Historical Epic,drama
+Horror,horror
+Horror Comedy,horror
+Horror Thriller,horror
+Music Drama,musical
+Musical,musical
+Period Action,action_adventure
+Period Adventure,action_adventure
+Period Comedy,comedy
+Period Drama,drama
+Romance,romance
+Romantic Comedy,romance
+Romantic Thriller,romance
+Sci-Fi,scifi_fantasy
+Sci-Fi Action,scifi_fantasy
+Sci-Fi Adventure,scifi_fantasy
+Sci-Fi Comedy,scifi_fantasy
+Sci-Fi Fantasy,scifi_fantasy
+Sci-Fi Horror,scifi_fantasy
+Sci-Fi Thriller,scifi_fantasy
+Sports,drama
+Sports Comedy,comedy
+Sports Drama,drama
+Thriller,drama
+Unknown,other
+War,drama
+War Drama,drama
+Western,western
+Western Comedy,comedy
