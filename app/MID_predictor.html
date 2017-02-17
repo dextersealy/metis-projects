@@ -190,7 +190,7 @@ select two countries from the map below.
 			   run_model(selected)
 		   } else {
 			   d3.select("#chancebar")
-				   .attr("fill", "white");
+				   .style("fill", "none");
 			   d3.select("#footer")
 				   .html(selected.join(", "));
 		   }
@@ -208,21 +208,25 @@ select two countries from the map below.
 					 async: true,
 					 data: "{\"country\": ["+ countries + "]}",
 					 success: function (data) {
-					 var chance = Math.round(100 * data["Military"]);
-					 color = "rgb(" + Math.round(255 * chance / 100) + ","
-						 + "0, 0)";
-					 d3.select("#chancebar")
-						 .attr("width", chance_scale(chance))
-						 .attr("fill", color);
-					 d3.select("#percent_text")
-						 .attr("x", (chance / 2) + "%")
-						 .text(chance.toFixed(1) + "%")
-						 .attr("fill", "white");
-					 d3.select("#footer")
-						 .html("Probability conflict between <b>"
-						 + list[0] + "</b> and <b>" + list[1]
-						 + "</b> turns violent:");
-				 },
+						 var chance = Math.round(100 * data["Military"]);
+						 if (chance <= 50) {
+							 color = "hsla(120, " + Math.round(50 - (chance / 2)) + "%, 50%, 1)";
+						 } else {
+							 color = "hsla(0, " + Math.round(50 + (chance / 2)) + "%, 50%, 1)";
+						 }
+						 bar_width =  chance_scale(chance);
+						 d3.select("#chancebar")
+							 .attr("width", bar_width)
+							 .style("fill", color);
+						 d3.select("#percent_text")
+							 .attr("x", Math.round(bar_width / 2))
+							 .text(chance.toFixed(1) + "%")
+							 .style("fill", "white");
+						 d3.select("#footer")
+							 .html("Probability conflict between <b>"
+							 + list[0] + "</b> and <b>" + list[1]
+							 + "</b> turns violent:");
+					 },
 					 error: function (result) {
 				 }
 	   })
