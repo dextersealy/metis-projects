@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Military Violence Predictor</title>
+<style>
+   .country:hover{
+		   stroke: #fff;
+		   stroke-width: 1.5px;
+   }
+   .text{
+		   font-size:10px;
+		   text-transform:capitalize;
+   }
+   .bar{
+		   border:1px solid #000;
+   }
+   #container {
+		   margin:10px 10%;
+		   border:1px solid #000;
+		   height:100%;
+		   overflow:hidden;
+		   background: #F0F8FF;
+   }
+   .hidden { 
+		   display: none; 
+   }
+   div.tooltip {
+		   color: #222; 
+		   background: #fff; 
+		   padding: .5em; 
+		   text-shadow: #f5f5f5 0 1px 0;
+		   border-radius: 2px; 
+		   box-shadow: 0px 0px 2px 0px #a6a6a6; 
+		   opacity: 0.9; 
+		   position: absolute;
+   }
+   .graticule {
+		   fill: none;
+		   stroke: #bbb;
+		   stroke-width: .5px;
+		   stroke-opacity: .5;
+   }
+   .equator {
+		   stroke: #ccc;
+		   stroke-width: 1px;
+   }
+</style>
+</head>
+<body>
+
+<h1>Military Violence Predictor</h1>
+
+<p>When a military dispute arises between two countries, what's the
+likelihood it will be be resolved diplomatically, or not?  </p>
+
+<p>To see the likelihood of a military conflict turning violent,
+select two countries from the map below.
+</p>
+
+<div>
+</div>
+</div>
+<div id="container"></div>
+<p id="footer"><p>
+<div id="bar_area"></div>
+<div>
+   <p style='font-size:8pt;'>
+   This page adapted from:
+   <a href='http://techslides.com/d3-map-starter-kit'>
+	  http://http://techslides.com/d3-map-starter-kit
+   </a>
+   </p>
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+   d3.select(window)
+	   .on("resize", throttle);
+
+   var width = document.getElementById('container').offsetWidth;
+   var height = width / 2;
+
+   var topo, projection, path, svg, g;
+
+   var graticule = d3.geo.graticule();
+
+   var selected = [];
+   var current_risk = 70;
+
+   var tooltip = d3.select("#container")
+	   .append("div")
+	   .attr("class", "tooltip hidden");
+
+   var body = d3.select('body')
+	   .append('svg')
+
+	   var zoom = d3.behavior.zoom()
+	   .scaleExtent([1, 9])
+	   .on("zoom", move);
+
+   var bar_area = d3.select('#bar_area')
+	   .append('svg:svg')
+	   .attr('width', width)
+	   .attr('height', 50);
+
+   var chance_scale = d3.scale.linear()
+	   .domain([0, 100])
+	   .range([0, 800]);
+
+   var bar = bar_area
+	   .append('g')
+	   .attr('class', 'bar')
+
+	   color = 'rgb(' + Math.round(255 * current_risk / 100) + ','
+	   + Math.round(255 * (100 - current_risk) / 100) + ', 0)';
+
+   console.log('color=', color)
+	   bar.append('svg:rect')
+	   .attr('id', 'chancebar')
+	   .attr('width', chance_scale(current_risk) + '%')
+	   .attr('height', '100%')
+	   .attr('fill', 'white');
+
+   bar.append('text')
+	   .attr('id', 'percent_text')
+	   .attr('dy', '.75em')
+	   .attr('y', 15)
+	   .attr('x', chance_scale(current_risk) / 2 + '%')
+	   .attr('text-anchor', 'center')
+	   .attr('fill', 'white')
+	   .attr('font-size', 20)
+	   .text(current_risk.toFixed(1) + '%');
+
+   setup(width,height);
+
+   function setup(width,height){
+	   projection = d3.geo.mercator()
+		   .translate([(width/2), (height/2)])
+		   .scale( width / 2 / Math.PI);
+
+	   path = d3.geo.path().projection(projection);
+
+	   svg = d3.select("#container")
+		   .append("svg")
+		   .attr("width", width)
+		   .attr("height", height)
+		   .call(zoom)
+		   .on("click", click)
+		   .append("g");
+
+	   g = svg.append("g");
+
+   }
+
+   d3.select("#predict")
+	   .on("click", function(){run_model(selected);});
+
+   d3.json("data/world-topo-min.json", function(error, world) {
+	   var countries = topojson.feature(world, world.objects.countries).features;
+	   topo = countries;
+	   draw(topo);
+   });
+
+   function draw(topo) {
+
+	   var country = g.selectAll(".country").data(topo);
+
+	   country.enter().insert("path")
+		   .attr("class", "country")
+		   .attr("d", path)
+		   .attr("id", function(d,i) { return d.id; })
+		   .attr("title", function(d,i) { return d.properties.name; })
+		   .style("fill", '#2f4f4f');
+
+	   // offsets for tooltips
+
+	   var offsetL = document.getElementById('container').offsetLeft+20;
+	   var offsetT = document.getElementById('container').offsetTop+10;
+
+	   // tooltips
+
+	   function show_tooltip(d,i) {
+		   var mouse = d3.mouse(svg.node()).map(function(d) { return parseInt(d); } );
+		   tooltip.classed("hidden", false)
+			   .attr("style", "left:"+(mouse[0]+offsetL)+"px;top:"+(mouse[1]+offsetT)+"px")
+			   .html(d.properties.name);
+	   }
+
+	   function hide_tooltip(d,i) {
+		   tooltip.classed("hidden", true);
+	   }
+
+	   function select_country(name, active) {
+		   index = selected.indexOf(name);
+		   if (index<0 && active) {
+			   selected.push(name);
+		   } else if(index>=0 && !active) {
+			   selected = selected.filter(function(item) {return item != name;});
+		   }
+		   if (selected.length == 2) {
+			   run_model(selected)
+		   } else {
+			   d3.select('#chancebar')
+				   .attr('fill', 'white');
+			   d3.select('#footer')
+				   .html(selected.join(', '));
+		   }
+
+			   //		   d3.select("#footer")
+			   //			   .html(selected.join(', '));
+	   }
+
+	   country
+		   .on("mousemove", show_tooltip)
+		   .on("mouseout", hide_tooltip)
+		   .on("click", function(d,i){
+		   var active = this.active ? false : true;
+		   d3.select(this)
+			   .style("fill", active ? d.properties.color : '#2f4f4f')
+			   .style("stroke", active ? "#fff" : "none")
+			   .style("stroke-width", active ? "1.5px" : "1px");
+		   this.active = active;
+		   select_country(d.properties.name, active);
+	   });
+
+   }
+
+   /**
+	* Converts an HSL color value to RGB. Conversion formula
+	* adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+	* Assumes h, s, and l are contained in the set [0, 1] and
+	* returns r, g, and b in the set [0, 255].
+	*
+	* @param   {number}  h       The hue
+	* @param   {number}  s       The saturation
+	* @param   {number}  l       The lightness
+	* @return  {Array}           The RGB representation
+	*/
+   function hslToRgb(h, s, l){
+	   var r, g, b;
+
+	   if(s == 0){
+		   r = g = b = l; // achromatic
+	   }else{
+		   var hue2rgb = function hue2rgb(p, q, t){
+			   if(t < 0) t += 1;
+			   if(t > 1) t -= 1;
+			   if(t < 1/6) return p + (q - p) * 6 * t;
+			   if(t < 1/2) return q;
+			   if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+			   return p;
+		   }
+
+		   var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		   var p = 2 * l - q;
+		   r = hue2rgb(p, q, h + 1/3);
+		   g = hue2rgb(p, q, h);
+		   b = hue2rgb(p, q, h - 1/3);
+	   }
+
+	   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+   }
+
+   function run_model(list) {
+	   countries = '"' + list.join('", "') + '"'
+		   console.log('run_model(' + countries + ')');
+	   $.ajax({
+		   type: "POST",
+					 contentType: "application/json; charset=utf-8",
+					 url: "/predict",
+					 dataType: "json",
+					 async: true,
+					 data: "{\"country\": ["+ countries + "]}",
+					 success: function (data) {
+					 var chance = Math.round(100 * data['Military']);
+					 color = 'rgb(' + Math.round(255 * chance / 100) + ','
+						 + '0, 0)';
+					 d3.select("#chancebar")
+						 .attr("width", chance_scale(chance))
+						 .attr("fill", color);
+					 d3.select("#percent_text")
+						 .attr("x", (chance / 2) + '%')
+						 .text(chance.toFixed(1) + "%");
+					 d3.select("#footer")
+						 .html('Probability conflict between <b>'
+						 + list[0] + '</b> and <b>' + list[1]
+						 + '</b> turns violent:');
+				 },
+					 error: function (result) {
+				 }
+	   })
+   }
+
+   function redraw() {
+	   width = document.getElementById('container').offsetWidth;
+	   height = width / 2;
+	   d3.select('svg').remove();
+	   setup(width, height);
+	   draw(topo);
+   }
+
+
+   function move() {
+
+	   var t = d3.event.translate;
+	   var s = d3.event.scale; 
+	   zscale = s;
+	   var h = height/4;
+
+
+	   t[0] = Math.min(
+		   (width/height)	* (s - 1), 
+		   Math.max( width * (1 - s), t[0] )
+		   );
+
+	   t[1] = Math.min(
+		   h * (s - 1) + h * s, 
+		   Math.max(height	 * (1 - s) - h * s, t[1])
+		   );
+
+	   zoom.translate(t);
+	   g.attr("transform", "translate(" + t + ")scale(" + s + ")");
+
+	   //adjust the country hover stroke width based on zoom level
+	   d3.selectAll(".country").style("stroke-width", 1.5 / s);
+
+   }
+
+
+   var throttleTimer;
+   function throttle() {
+	   window.clearTimeout(throttleTimer);
+	   throttleTimer = window.setTimeout(function() {
+		   redraw();
+	   }, 200);
+   }
+
+
+   //geo translation on mouse click in map
+   function click() {
+	   var latlon = projection.invert(d3.mouse(this));
+	   console.log(latlon);
+   }
+
+
+   //function to add points and text to the map (used in plotting capitals)
+   function addpoint(lat,lon,text) {
+
+	   var gpoint = g.append("g").attr("class", "gpoint");
+	   var x = projection([lat,lon])[0];
+	   var y = projection([lat,lon])[1];
+
+	   gpoint.append("svg:circle")
+		   .attr("cx", x)
+		   .attr("cy", y)
+		   .attr("class","point")
+		   .attr("r", 1.5);
+
+	   //conditional in case a point has no associated text
+	   if(text.length>0){
+
+		   gpoint.append("text")
+			   .attr("x", x+2)
+			   .attr("y", y+2)
+			   .attr("class","text")
+			   .text(text);
+	   }
+
+   }
+
+</script>
+</body>
+</html>
