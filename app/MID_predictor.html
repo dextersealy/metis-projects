@@ -198,8 +198,8 @@ select two countries from the map below.
    }
 
    function run_model(list) {
-	   countries = '"' + list.join('", "') + '"'
-		   console.log("run_model(" + countries + ")");
+	   countries = '"' + list.join('", "') + '"';
+	   console.log("run_model(" + countries + ")");
 	   $.ajax({
 		   type: "POST",
 					 contentType: "application/json; charset=utf-8",
