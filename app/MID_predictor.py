@@ -133,14 +133,6 @@ def get_priors(df, a_abb, b_abb):
     def priorsum(df, col):
         return df.groupby(['a_abb', 'b_abb'])[col].transform(pd.Series.cumsum) - df[col]
 
-    def priormax(df, col):
-        def _priormax(series):
-            return pd.Series.cummax(series).shift(1).fillna(0)
-        return df.groupby(['a_abb', 'b_abb'])[col].transform(_priormax)
-
-    def priorcount(df, col):
-        return df.groupby(['a_abb', 'b_abb'])[col].transform(lambda x: range(len(x)))
-
     def priormode(df, col):
         def _priormode(x):
             result = [0]
@@ -151,13 +143,6 @@ def get_priors(df, a_abb, b_abb):
             return pd.Series(result)
         return df.groupby(['a_abb', 'b_abb'])[col].transform(_priormode)
 
-        result = data.copy()
-        for col in ['a_win', 'b_win', 'a_yield', 'b_yield', 'a_fatal', 'b_fatal']:
-            result['p' + col] = priorsum(result, col)
-
-        for col in ['a_hiact', 'b_hiact']:
-            result['p' + col] = priormode(result, col)
-        
     row = df.iloc[-1].copy()
     row.a_abb = a_abb if a_abb < b_abb else b_abb
     row.b_abb = b_abb if a_abb < b_abb else a_abb
