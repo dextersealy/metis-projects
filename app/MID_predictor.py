@@ -14,17 +14,6 @@ import sys
 
 app = flask.Flask(__name__)
 
-#   Flask: homepage
-
-@app.route("/")
-def homepage():
-    """
-    Homepage: serve the home page
-    """
-    with open("MID_predictor.html", 'r') as fd:
-        return fd.read()
-
-
 #   Flask: local files
 
 @app.route('/', defaults={'path': 'MID_predictor.html'})
