@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Clustered Rental Listings</title>
+<link rel=stylesheet type=text/css href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" media="all">
+<style>
+   body {
+		   padding: 10px;
+		   font-size: 12px;
+   }
+
+   table {
+		   font-size: 10px;
+		   line-height: 10px;
+   }
+
+   td, th {
+		   width: 33.3%;
+   }
+
+   tr:hover {
+		   color:#000000;
+		   background-color:#E0E0E0;
+   }
+
+
+   tr[chosen=true] {
+		   background-color:#B5CDE1;
+   }
+
+   .well {
+		   padding-top: 10px;
+		   padding-bottom: 10px;
+   }
+
+   .node {
+		   cursor: pointer;
+   }	
+
+   .node:hover {
+		   stroke: #000;
+		   stroke-width: 1.5px;
+   }
+
+   .label {
+		   font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+		   text-anchor: middle;
+		   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+   }
+
+   .label,
+   .node--root,
+   .node--leaf {
+		   pointer-events: none;
+   }
+
+   #buttonBar {
+		width:100%;
+		text-align: left;
+   }
+   .inner {
+		display: inline-block;
+   }
+
+</style>
+</head>
+<body>
+
+<div class="well" style="padding-top: 0px;">
+   <h3>Clustered Rental Listings</h3>
+   <div id="buttonBar"></div>
+</div>
+
+</div>
+   <div style="font-size: 0;width: 500px; float: left; overflow: hidden;">
+	   <div id="chartDiv"></div>
+	   <div id="tokens" class="well" style="font-size: 12px; opacity: 0; font-weight: bold;"></div>
+	   <div id="description" class="well" style="font-size: 12px; margin:0px;opacity: 0;"></div>
+   </div>
+   <div id="tableDiv" style="margin-left: 520px">
+   </div>
+</div>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+   var clusters;
+   var chartWidth = 500;
+   var chartHeight = 500;
+   var margin = 20;
+   var model = ""
+
+   //	Buttons
+
+   var buttons = ["KMeans", "NMF", "Ward"];
+   d3.select("#buttonBar").selectAll("div")
+	   .data(buttons)
+	   .enter()
+	 .append("div")
+	   .attr("class", "inner")
+	 .append("button")
+	   .attr("id", function(d) { return "btn" + d; })
+	   .attr("class", "btn btn-secondary")
+	   .attr("style", "margin-right:10px")
+	   .text(function(d) { return d; })
+	   .on("click", function(d) { set_model(d); });
+
+   //	Bubble chart
+
+   d3.select("#chartDiv")
+	 .append("svg")
+	   .attr("width", chartWidth)
+	   .attr("height", chartHeight);
+
+   var color = d3.scaleOrdinal(d3.schemeCategory20c);
+   var svg = d3.select("svg");
+   var diameter = +svg.attr("width");
+   var g = svg.append("g")
+	   .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+   var pack = d3.pack()
+	   .size([diameter - margin, diameter - margin])
+	   .padding(2);
+
+   //	Table
+   
+   var table = d3.select("#tableDiv")
+	   .append("table")
+	   .attr("class", "table table-condensed table-bordered");
+
+   //	Select default model
+
+   set_model("NMF");
+
+   function set_model(name) {
+	   if (name != model) {
+		   if (model != "") {
+			   d3.select("#btn" + model)
+				   .attr("class", "btn btn-secondary")
+				   .attr("aria-pressed", "false");
+		   }
+		   d3.select("#btn" + name)
+			   .attr("class", "btn btn-primary active") 
+			   .attr("aria-pressed", "true");
+		   model = name;
+		   load_model(name)
+	   }
+   }
+	   
+   function load_model(name) {
+
+	   d3.selectAll("circle,text").remove();
+	   
+	   filename = model + "_clusters.json";
+
+	   d3.json(filename, function(error, root) {
+		   if (error) throw error;
+
+		   clusters = root;
+
+		   root = d3.hierarchy(root)
+			   .sum(function(d) { return d.size; })
+			   .sort(function(a, b) { return b.value - a.value; });
+
+		   var focus = root,
+			   nodes = pack(root).descendants(),
+			   view;
+
+		   var circle = g.selectAll("circle")
+			   .data(nodes)
+			   .enter().append("circle")
+			   .attr("name", function(d) { return d.data.name; })
+			   .attr("class", function(d) { return d.parent ? "node" : "node node--root"; })
+			   .style("fill", function(d) { return d.parent ? color(d.data.name) : '#ffffff'; })
+			   .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
+
+		   var text = g.selectAll("text")
+			   .data(nodes)
+			   .enter().append("text")
+			   .attr("class", "label")
+			   .style("fill-opacity", function(d) { return d.parent === root ? 1 : 0; })
+			   .style("display", function(d) { return d.parent === root ? "inline" : "none"; })
+			   .text(function(d) { return d.data.words ? d.data.words.split(",", 1) : ''; });
+
+		   var node = g.selectAll("circle,text");
+
+		   svg.style("background", null)
+			   .on("dblclick", function() { zoom(root); })
+			   .on("click", function() { zoom(root); });
+
+		   zoomTo([root.x, root.y, root.r * 2 + margin]);
+
+		   // zooming
+
+		   function zoom(d) {
+			   var focus0 = focus; focus = d;
+
+			   var transition = d3.transition()
+				   .duration(d3.event.altKey ? 7500 : 750)
+				   .tween("zoom", function(d) {
+				   var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
+				   return function(t) { zoomTo(i(t)); };
+			   });
+
+			   transition.selectAll("text")
+				   .filter(function(d) { return d === focus || d === focus0; })
+				   .on("start", function(d) { d3.select(this).style("font-size", (d === focus) ? "20px" : "11px"); })
+
+			   if (!(d === root)) {
+				   show_cluster(d.data.name, d.data.words);
+			   } else {
+				   hide_cluster()
+			   }
+		   }
+
+		   function zoomTo(v) {
+			   var k = diameter / v[2]; view = v;
+			   node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+			   circle.attr("r", function(d) { return d.r * k; });
+		   }
+	   });
+   }
+
+   function show_cluster(name, words) {
+	   args = "{ \"model\": \"" + model + "\", \"cluster\": \"" + name + "\"}";
+       console.log("POST", args);
+       $.ajax({
+           type: "POST",
+           contentType: "application/json; charset=utf-8",
+           url: "/select",
+           dataType: "json",
+           async: true,
+           data: args,
+           success: function (data) {
+					 show_table(data, ["size", "price", "street_address"])
+           }
+           ,
+           error: function (result) {
+		   }
+       });
+	   show_words(words)
+   }
+
+   function hide_cluster() {
+	   hide_words();
+	   hide_table();
+   }
+   
+   function show_words(words) {
+	   d3.select("#tokens")
+		   .style("opacity", 1)
+		   .text("KEY WORDS: " + words);
+   }
+
+   function hide_words() {
+	   d3.select("#tokens")
+		   .style("opacity", 0)
+		   .text("");
+   }
+   
+   function show_table(data, columns) {
+	   table.selectAll("thead").remove();
+	   table.selectAll("tbody").remove();
+
+	   var thead = table.append("thead").append('tr');
+	   var tbody = table.append("tbody")
+		  
+	   // Populate header row
+	   thead.selectAll("th")
+		   .data(columns)
+		   .enter().append("th")
+		   .text(function (d) { return d; })
+
+	   // Create a row for each object in the data
+	   var rows = tbody.selectAll("tr")
+		   .data(data)
+		   .enter().append("tr")
+ 		   .on("click", function(d) { show_description(d.description); });
+		  
+	   // Create a cell in each row for each column
+	   var cells = rows.selectAll("td")
+		   .data(function (row) { return columns.map(function (column) {
+			  return {column: column, value: row[column]};
+			}); })
+		   .enter().append("td")
+		   .text(function (d) { return d.value; });
+
+	   return table;
+   }
+
+   function hide_table() {
+	   show_table([], []);
+	   hide_description()
+   }
+	  
+   function show_description(text) {
+	   d3.select("#description")
+		   .style("opacity", 1)
+		   .text(text);
+   }
+
+   function hide_description() {
+	   d3.select("#description")
+		   .style("opacity", 0)
+		   .text("")
+   }
+</script>
+</body>
