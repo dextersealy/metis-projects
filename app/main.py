@@ -44,7 +44,6 @@ def select():
     column = listings[column_map[model]]
     matched = listings[column==cluster].reset_index()
     results = matched.to_dict(orient='records')
-    print(results[0])
 
     #	Return result
     
