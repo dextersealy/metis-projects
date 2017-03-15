@@ -65,6 +65,10 @@ select two countries from the map below.
    d3.select(window)
 	   .on("resize", throttle);
 
+	var fill = d3.scale.linear()
+		.domain([40, 100])
+		.range(["green", "red"]);
+
    var zoom = d3.behavior.zoom()
 	   .scaleExtent([1, 9])
 	   .on("zoom", move);
@@ -214,7 +218,8 @@ select two countries from the map below.
 						 bar_width =  chance_scale(chance);
 						 d3.select("#chancebar")
 							 .attr("width", bar_width)
-							 .style("fill", color);
+							 .style("fill", function(d) { return fill(chance); });
+//							 .style("fill", color);
 						 d3.select("#percent_text")
 							 .attr("x", Math.round(bar_width / 2))
 							 .text(chance.toFixed(1) + "%")
