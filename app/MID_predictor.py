@@ -213,15 +213,15 @@ def is_major(abb, year, dict_=None):
 
 #   Initialize model and data
 
-global clf
-global contiguity_dict
-global country_dict
-global df_model
-global majors_dict
-global nmc_dict
-global X_template
+clf = None
+contiguity_dict = None
+country_dict = None
+df_model = None
+majors_dict = None
+nmc_dict = None
+X_template = None
 
-def init():
+def init_app():
     global clf
     global contiguity_dict
     global country_dict
@@ -316,12 +316,14 @@ def main(argv):
             test = True
 
     if test:
-        init()
+        init_app()
         test_predict(count)
     else:
-        init()
+        init_app()
         app.run(host=host, debug=debug)
 
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+else:
+    init_app()
