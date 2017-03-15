@@ -2,3 +2,4 @@
 *.pkl
 *.pyc
 db_connection.py
+.ipynb_checkpoints/
