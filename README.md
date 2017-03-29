@@ -5,6 +5,8 @@ application I created for the third project in Metis' Data Science
 program. The assignment was to use a classification algorithm
 to predict outcomes.
 
+![Military violence predictor screenshot](MID_pedictor.png)
+
 Using the [Correlates of War](http://www.correlatesofwar.org/)
 data set, I created a Random Forests classifier that predicts whether a
 military dispute will turn violent.
