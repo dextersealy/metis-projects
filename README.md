@@ -5,6 +5,8 @@ D3/Flask application I created for the fourth project in Metis' Data
 Science program. It was an unsupervised learning task aimed at
 revealing patterns in New York City apartment rental listings.
 
+[Web app screenshot](ClusterNYC.png)
+
 I applied several **scikit-learn** modules to cluster approximately
 50,000 rental listings, using only the text descriptions written by
 listing agents. Of the methods I tried, Non-negative Matrix Factoring
